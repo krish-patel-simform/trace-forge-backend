@@ -19,7 +19,6 @@ export function validateEvent(event: unknown): ValidationResult {
     };
   }
 
-  // Check if request body is an object
   if (typeof event !== 'object') {
     return {
       success: false,
