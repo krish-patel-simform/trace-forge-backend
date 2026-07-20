@@ -12,7 +12,6 @@ type ValidationResult =
     };
 
 export function validateEvent(event: unknown): ValidationResult {
-  // Check if request body exists
   if (!event) {
     return {
       success: false,
