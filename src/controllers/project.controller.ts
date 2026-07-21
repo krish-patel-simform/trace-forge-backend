@@ -64,7 +64,7 @@ export const updateProject = async (req: Request, res: Response): Promise<void> 
       return;
     }
     const validatedData = updateProjectSchema.parse({ body: req.body }).body;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const project = await projectService.updateProject(
       req.params.id as string,
       String(req.user._id),
