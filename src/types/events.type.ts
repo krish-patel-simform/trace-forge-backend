@@ -1,4 +1,4 @@
-import { EVENT_TYPES } from '../constants/events-types.ts';
+import { EVENT_TYPES } from '../constants/events-types.js';
 
 export interface TraceForgeEvent {
   eventId: string;

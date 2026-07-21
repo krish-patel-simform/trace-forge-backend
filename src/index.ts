@@ -6,7 +6,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { env } from './config/env.js';
 import { initSocket } from './config/socket.js';
-import dummyRouter from './routes/dummyRoutes.ts';
+import dummyRouter from './routes/dummyRoutes.js';
 import eventRouter from './routes/events.routes.js';
 import authRouter from './routes/auth.routes.js';
 import projectRouter from './routes/project.routes.js';

@@ -1,4 +1,4 @@
-import { EVENT_TYPES } from '../constants/events-types.ts';
+import { EVENT_TYPES } from '../constants/events-types.js';
 import type { EventType, TraceForgeEvent } from '../types/events.type.ts';
 
 type ValidationResult =

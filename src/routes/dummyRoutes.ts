@@ -1,5 +1,5 @@
 import express from 'express';
-import { dummyController } from '../controllers/dummy.controller.ts';
+import { dummyController } from '../controllers/dummy.controller.js';
 
 const dummyRouter = express.Router();
 
