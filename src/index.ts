@@ -8,6 +8,7 @@ import dummyRouter from './routes/dummyRoutes.ts';
 import eventRouter from './routes/events.routes.js';
 import authRouter from './routes/auth.routes.js';
 import projectRouter from './routes/project.routes.js';
+import analyticsRouter from './routes/analytics.routes.js';
 import { startEventWorker } from './workers/event.worker.js';
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/dummy', dummyRouter);
 app.use('/api/events', eventRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/projects', projectRouter);
+app.use('/api/projects/:projectId/analytics', analyticsRouter);
 
 // Start the BullMQ event worker in-process
 startEventWorker();
