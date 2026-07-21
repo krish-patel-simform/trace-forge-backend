@@ -15,7 +15,7 @@ const app = express();
 
 const PORT = env.PORT;
 
-app.use(cors({ origin: '*' }));
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
 app.use('/api/dummy', dummyRouter);
