@@ -5,6 +5,9 @@ import {
   getTopPages,
   getReferrers,
   getSystemBreakdown,
+  getTopClicks,
+  getCustomEvents,
+  getScrollDepth,
 } from '../controllers/analytics.controller.js';
 import { protect as requireAuth } from '../middlewares/auth.middleware.js';
 
@@ -21,5 +24,10 @@ router.get('/timeseries', getTimeSeries);
 router.get('/pages', getTopPages);
 router.get('/referrers', getReferrers);
 router.get('/systems', getSystemBreakdown);
+
+// Engagement endpoints
+router.get('/engagement/clicks', getTopClicks);
+router.get('/engagement/custom', getCustomEvents);
+router.get('/engagement/scroll', getScrollDepth);
 
 export default router;

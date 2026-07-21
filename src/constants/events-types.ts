@@ -4,4 +4,5 @@ export const EVENT_TYPES = {
   SCROLL: 'scroll',
   SEARCH: 'search',
   CUSTOM: 'custom',
+  HEARTBEAT: 'heartbeat',
 } as const;

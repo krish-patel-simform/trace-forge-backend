@@ -95,3 +95,57 @@ export const getSystemBreakdown = async (req: Request<{ projectId: string }>, re
     res.status(400).json({ error: 'Failed to get system breakdown' });
   }
 };
+
+export const getTopClicks = async (req: Request<{ projectId: string }>, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const query = analyticsQuerySchema.parse(req.query);
+
+    const dateRange = {
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+    };
+
+    const topClicks = await AnalyticsService.getTopClicks(projectId, dateRange, query.limit);
+    res.json(topClicks);
+  } catch (error) {
+    console.error('getTopClicks Error:', error);
+    res.status(400).json({ error: 'Failed to get top clicks' });
+  }
+};
+
+export const getCustomEvents = async (req: Request<{ projectId: string }>, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const query = analyticsQuerySchema.parse(req.query);
+
+    const dateRange = {
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+    };
+
+    const customEvents = await AnalyticsService.getCustomEvents(projectId, dateRange, query.limit);
+    res.json(customEvents);
+  } catch (error) {
+    console.error('getCustomEvents Error:', error);
+    res.status(400).json({ error: 'Failed to get custom events' });
+  }
+};
+
+export const getScrollDepth = async (req: Request<{ projectId: string }>, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const query = analyticsQuerySchema.parse(req.query);
+
+    const dateRange = {
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+    };
+
+    const scrollDepth = await AnalyticsService.getScrollDepth(projectId, dateRange);
+    res.json(scrollDepth);
+  } catch (error) {
+    console.error('getScrollDepth Error:', error);
+    res.status(400).json({ error: 'Failed to get scroll depth' });
+  }
+};

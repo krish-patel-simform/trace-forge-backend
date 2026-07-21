@@ -183,4 +183,93 @@ export const AnalyticsService = {
 
     return { browsers, os, devices };
   },
+
+  getTopClicks: async (projectId: string, dateRange: DateRange, limit: number = 10) => {
+    const match = buildDateMatch(projectId, dateRange, { eventType: 'click' });
+
+    return Event.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: {
+            text: '$payload.text',
+            name: '$payload.name',
+          },
+          path: { $first: '$payload.path' },
+          clicks: { $sum: 1 },
+          uniqueSessions: { $addToSet: '$payload.sessionId' },
+        },
+      },
+      {
+        $project: {
+          text: '$_id.text',
+          name: '$_id.name',
+          path: 1,
+          clicks: 1,
+          uniqueUsers: { $size: '$uniqueSessions' },
+          _id: 0,
+        },
+      },
+      { $sort: { clicks: -1 } },
+      { $limit: limit },
+    ]);
+  },
+
+  getCustomEvents: async (projectId: string, dateRange: DateRange, limit: number = 20) => {
+    const match = buildDateMatch(projectId, dateRange, { eventType: 'custom' });
+
+    return Event.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: '$payload.eventName',
+          occurrences: { $sum: 1 },
+          uniqueSessions: { $addToSet: '$payload.sessionId' },
+        },
+      },
+      {
+        $project: {
+          eventName: '$_id',
+          occurrences: 1,
+          uniqueUsers: { $size: '$uniqueSessions' },
+          _id: 0,
+        },
+      },
+      { $sort: { occurrences: -1 } },
+      { $limit: limit },
+    ]);
+  },
+
+  getScrollDepth: async (projectId: string, dateRange: DateRange) => {
+    const match = buildDateMatch(projectId, dateRange, { eventType: 'scroll' });
+
+    return Event.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { path: '$context.path', depth: '$payload.depth' },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.path',
+          distribution: {
+            $push: {
+              depth: '$_id.depth',
+              count: '$count',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          path: '$_id',
+          distribution: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { path: 1 } },
+    ]);
+  },
 };

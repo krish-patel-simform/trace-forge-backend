@@ -2,6 +2,8 @@ import { Worker } from 'bullmq';
 import { redisConnection } from '../config/redis.js';
 import { Event } from '../models/event.model.js';
 import { EVENT_QUEUE_NAME, type EventJobData } from '../services/eventQueue.service.js';
+import { ActiveUsersService } from '../realtime/active-users.js';
+import { EventsPublisher } from '../realtime/events.publisher.js';
 
 /**
  * BullMQ Worker — processes queued events and persists them to MongoDB.
@@ -15,6 +17,13 @@ export const startEventWorker = (): Worker<EventJobData> => {
     EVENT_QUEUE_NAME,
     async (job) => {
       const { event, projectId } = job.data;
+
+      const sessionId = String(event.payload?.sessionId || 'unknown');
+
+      if (event.eventType === 'heartbeat') {
+        await ActiveUsersService.addActiveSession(projectId, sessionId);
+        console.log(`[Worker] Processed heartbeat for session: ${sessionId}`);
+      }
 
       await Event.updateOne(
         { eventId: event.eventId },
@@ -33,6 +42,15 @@ export const startEventWorker = (): Worker<EventJobData> => {
         },
         { upsert: true }
       );
+
+      if (event.eventType !== 'heartbeat') {
+        await EventsPublisher.publishNewEvent(projectId, {
+          type: event.eventType,
+          name: event.context.path || event.eventType,
+          sessionId,
+          timestamp: new Date(event.timestamp),
+        });
+      }
 
       console.log(`[Worker] Processed event: ${event.eventType} (${event.eventId})`);
     },
