@@ -14,12 +14,14 @@ export const setupSocketHandlers = (io: Server) => {
         const { projectId, token } = payload;
 
         if (!projectId || !token) {
+          console.error(`❌ Client ${socket.id} failed to join: Missing projectId or token`);
           socket.emit('error', { message: 'Missing projectId or token' });
           return;
         }
 
         const decoded = verifyToken(token);
         if (!decoded) {
+          console.error(`❌ Client ${socket.id} failed to join: Invalid or expired token`);
           socket.emit('error', { message: 'Invalid or expired token' });
           return;
         }
@@ -27,6 +29,7 @@ export const setupSocketHandlers = (io: Server) => {
         // Verify project ownership
         const project = await Project.findOne({ _id: projectId, owner: decoded.userId });
         if (!project) {
+          console.error(`❌ Client ${socket.id} failed to join: Project not found or unauthorized`);
           socket.emit('error', { message: 'Project not found or unauthorized' });
           return;
         }

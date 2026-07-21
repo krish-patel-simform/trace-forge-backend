@@ -12,6 +12,8 @@ import authRouter from './routes/auth.routes.js';
 import projectRouter from './routes/project.routes.js';
 import analyticsRouter from './routes/analytics.routes.js';
 import realtimeRouter from './routes/realtime.routes.js';
+import sessionRouter from './routes/session.routes.js';
+import userRouter from './routes/user.routes.js';
 import { startEventWorker } from './workers/event.worker.js';
 
 const app = express();
@@ -31,6 +33,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/projects/:projectId/analytics', analyticsRouter);
 app.use('/api/projects/:projectId/realtime', realtimeRouter);
+app.use('/api/projects/:projectId/sessions', sessionRouter);
+app.use('/api/projects/:projectId/users', userRouter);
 
 // Start the BullMQ event worker in-process
 startEventWorker();

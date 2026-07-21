@@ -9,6 +9,6 @@ export class EventsPublisher {
     eventSummary: { type: string; name: string; sessionId: string; timestamp: Date }
   ): Promise<void> {
     const channel = `realtime:${projectId}`;
-    await redisConnection.publish(channel, JSON.stringify({ type: 'new-event', data: eventSummary }));
+    await redisConnection.publish(channel, JSON.stringify({ type: eventSummary.type, data: eventSummary }));
   }
 }
