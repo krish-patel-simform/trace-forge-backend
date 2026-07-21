@@ -6,6 +6,7 @@ import {
   getReferrers,
   getSystemBreakdown,
   getTopClicks,
+  getTopSearches,
   getCustomEvents,
   getScrollDepth,
 } from '../controllers/analytics.controller.js';
@@ -27,6 +28,7 @@ router.get('/systems', getSystemBreakdown);
 
 // Engagement endpoints
 router.get('/engagement/clicks', getTopClicks);
+router.get('/engagement/searches', getTopSearches);
 router.get('/engagement/custom', getCustomEvents);
 router.get('/engagement/scroll', getScrollDepth);
 

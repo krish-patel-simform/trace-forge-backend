@@ -195,7 +195,7 @@ export const AnalyticsService = {
             text: '$payload.text',
             name: '$payload.name',
           },
-          path: { $first: '$payload.path' },
+          path: { $first: { $ifNull: ['$payload.path', '$context.path'] } },
           clicks: { $sum: 1 },
           uniqueSessions: { $addToSet: '$payload.sessionId' },
         },
@@ -211,6 +211,31 @@ export const AnalyticsService = {
         },
       },
       { $sort: { clicks: -1 } },
+      { $limit: limit },
+    ]);
+  },
+
+  getTopSearches: async (projectId: string, dateRange: DateRange, limit: number = 10) => {
+    const match = buildDateMatch(projectId, dateRange, { eventType: 'search' });
+
+    return Event.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: '$payload.query',
+          searches: { $sum: 1 },
+          uniqueSessions: { $addToSet: '$payload.sessionId' },
+        },
+      },
+      {
+        $project: {
+          query: '$_id',
+          searches: 1,
+          uniqueUsers: { $size: '$uniqueSessions' },
+          _id: 0,
+        },
+      },
+      { $sort: { searches: -1 } },
       { $limit: limit },
     ]);
   },
@@ -247,7 +272,7 @@ export const AnalyticsService = {
       { $match: match },
       {
         $group: {
-          _id: { path: '$context.path', depth: '$payload.depth' },
+          _id: { path: { $ifNull: ['$payload.page', '$context.path'] }, depth: '$payload.depth' },
           count: { $sum: 1 },
         },
       },

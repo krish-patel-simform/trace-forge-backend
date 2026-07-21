@@ -114,6 +114,24 @@ export const getTopClicks = async (req: Request<{ projectId: string }>, res: Res
   }
 };
 
+export const getTopSearches = async (req: Request<{ projectId: string }>, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const query = analyticsQuerySchema.parse(req.query);
+
+    const dateRange = {
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+    };
+
+    const topSearches = await AnalyticsService.getTopSearches(projectId, dateRange, query.limit);
+    res.json(topSearches);
+  } catch (error) {
+    console.error('getTopSearches Error:', error);
+    res.status(400).json({ error: 'Failed to get top searches' });
+  }
+};
+
 export const getCustomEvents = async (req: Request<{ projectId: string }>, res: Response) => {
   try {
     const { projectId } = req.params;

@@ -44,7 +44,7 @@ export const startEventWorker = (): Worker<EventJobData> => {
             payload: event.payload,
           },
         },
-        { upsert: true }
+        { upsert: true },
       );
 
       // Phase 10: Session Pre-aggregation
@@ -83,11 +83,7 @@ export const startEventWorker = (): Worker<EventJobData> => {
           (updateSession.$set as Record<string, unknown>).userId = userId;
         }
 
-        await Session.updateOne(
-          { projectId, sessionId },
-          updateSession,
-          { upsert: true }
-        );
+        await Session.updateOne({ projectId, sessionId }, updateSession, { upsert: true });
       }
 
       // Phase 10: User Pre-aggregation
@@ -108,17 +104,31 @@ export const startEventWorker = (): Worker<EventJobData> => {
           updateUser.$set = { properties: event.payload };
         }
 
-        await TrackedUser.updateOne(
-          { projectId, externalUserId: userId },
-          updateUser,
-          { upsert: true }
-        );
+        await TrackedUser.updateOne({ projectId, externalUserId: userId }, updateUser, {
+          upsert: true,
+        });
       }
 
       if (event.eventType !== 'heartbeat') {
+        const liveEventType = event.eventType;
+        let eventName = event.context.path || event.eventType;
+
+        if (event.eventType === 'click') {
+          eventName =
+            (event.payload?.name as string) || (event.payload?.element as string) || 'Click';
+        } else if (event.eventType === 'scroll') {
+          eventName = (event.payload?.page as string) || 'Scroll';
+        } else if (event.eventType === 'page_view') {
+          eventName = (event.payload?.page_title as string) || event.context.path || 'Page View';
+        } else if (event.eventType === 'search') {
+          eventName = (event.payload?.query as string) || 'Search';
+        } else if (event.eventType === 'custom') {
+          eventName = (event.payload?.eventName as string) || 'Custom Event';
+        }
+
         await EventsPublisher.publishNewEvent(projectId, {
-          type: event.eventType,
-          name: event.context.path || event.eventType,
+          type: liveEventType,
+          name: eventName,
           sessionId,
           timestamp: eventTimestamp,
         });
@@ -129,7 +139,7 @@ export const startEventWorker = (): Worker<EventJobData> => {
     {
       connection: redisConnection,
       concurrency: 10,
-    }
+    },
   );
 
   worker.on('completed', (job) => {
