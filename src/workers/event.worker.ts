@@ -49,7 +49,7 @@ export const startEventWorker = (): Worker<EventJobData> => {
 
       // Phase 10: Session Pre-aggregation
       if (sessionId && sessionId !== 'unknown') {
-        const isPageView = event.eventType === 'pageview';
+        const isPageView = event.eventType === 'page_view';
         const updateSession: Record<string, unknown> = {
           $setOnInsert: {
             projectId,

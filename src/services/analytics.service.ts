@@ -195,7 +195,8 @@ export const AnalyticsService = {
             text: '$payload.text',
             name: '$payload.name',
           },
-          path: { $first: { $ifNull: ['$payload.path', '$context.path'] } },
+          // Page URL path (e.g. "/", "/about") — human-readable location of the click
+          pagePath: { $first: '$context.path' },
           clicks: { $sum: 1 },
           uniqueSessions: { $addToSet: '$payload.sessionId' },
         },
@@ -204,7 +205,7 @@ export const AnalyticsService = {
         $project: {
           text: '$_id.text',
           name: '$_id.name',
-          path: 1,
+          pagePath: 1,
           clicks: 1,
           uniqueUsers: { $size: '$uniqueSessions' },
           _id: 0,
@@ -214,6 +215,7 @@ export const AnalyticsService = {
       { $limit: limit },
     ]);
   },
+
 
   getTopSearches: async (projectId: string, dateRange: DateRange, limit: number = 10) => {
     const match = buildDateMatch(projectId, dateRange, { eventType: 'search' });
