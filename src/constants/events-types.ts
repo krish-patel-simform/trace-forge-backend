@@ -5,4 +5,5 @@ export const EVENT_TYPES = {
   SEARCH: 'search',
   CUSTOM: 'custom',
   HEARTBEAT: 'heartbeat',
+  IDENTIFY: 'identify',
 } as const;
