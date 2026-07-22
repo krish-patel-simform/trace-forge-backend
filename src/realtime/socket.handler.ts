@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { verifyToken } from '../utils/token.util.js';
 import { Project } from '../models/project.model.js';
 import { ActiveUsersService } from './active-users.js';
-import { redisConnection } from '../config/redis.js';
+import { createPubSubConnection } from '../config/redis.js';
 
 export const setupSocketHandlers = (io: Server) => {
   io.on('connection', (socket: Socket) => {
@@ -14,12 +14,14 @@ export const setupSocketHandlers = (io: Server) => {
         const { projectId, token } = payload;
 
         if (!projectId || !token) {
+          console.error(`❌ Client ${socket.id} failed to join: Missing projectId or token`);
           socket.emit('error', { message: 'Missing projectId or token' });
           return;
         }
 
         const decoded = verifyToken(token);
         if (!decoded) {
+          console.error(`❌ Client ${socket.id} failed to join: Invalid or expired token`);
           socket.emit('error', { message: 'Invalid or expired token' });
           return;
         }
@@ -27,6 +29,7 @@ export const setupSocketHandlers = (io: Server) => {
         // Verify project ownership
         const project = await Project.findOne({ _id: projectId, owner: decoded.userId });
         if (!project) {
+          console.error(`❌ Client ${socket.id} failed to join: Project not found or unauthorized`);
           socket.emit('error', { message: 'Project not found or unauthorized' });
           return;
         }
@@ -74,19 +77,28 @@ export const setupSocketHandlers = (io: Server) => {
     }
   }, 10000); // 10 seconds
 
-  // Setup Redis Pub/Sub subscriber for live events
-  const subscriber = redisConnection.duplicate();
+  // Setup a dedicated Redis Pub/Sub subscriber for live events.
+  // Uses createPubSubConnection() — NOT redisConnection.duplicate() — to avoid
+  // inheriting BullMQ-specific flags that break psubscribe.
+  const subscriber = createPubSubConnection();
+
   subscriber.psubscribe('realtime:*', (err, count) => {
-    if (err) console.error('Failed to psubscribe:', err, count);
+    if (err) {
+      console.error('❌ Failed to psubscribe to realtime:* channel:', err.message);
+      return;
+    }
+    console.log(`✅ Redis Pub/Sub subscribed to realtime:* (${count} active subscriptions)`);
   });
 
-  subscriber.on('pmessage', (pattern, channel, message) => {
+  subscriber.on('pmessage', (_pattern, channel, message) => {
     try {
       const projectId = channel.split(':')[1];
-      const parsedMessage = JSON.parse(message);
+      if (!projectId) return;
 
+      const parsedMessage = JSON.parse(message) as { type: string; data: unknown };
       const roomName = `project:${projectId}`;
 
+      console.log(`📡 Broadcasting event "${parsedMessage.type}" to room ${roomName}`);
       io.to(roomName).emit(parsedMessage.type, parsedMessage.data);
     } catch (error) {
       console.error('Error handling pub/sub message:', error);

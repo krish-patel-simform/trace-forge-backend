@@ -51,5 +51,9 @@ const eventSchema = new Schema<IEvent>(
 
 // Compound index to efficiently query events per project sorted by time
 eventSchema.index({ projectId: 1, timestamp: -1 });
+// Session lookup
+eventSchema.index({ projectId: 1, 'payload.sessionId': 1, timestamp: 1 });
+// User lookup
+eventSchema.index({ projectId: 1, 'payload.userId': 1, timestamp: -1 });
 
 export const Event = mongoose.model<IEvent>('Event', eventSchema);
