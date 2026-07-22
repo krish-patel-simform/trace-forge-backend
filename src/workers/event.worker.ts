@@ -28,23 +28,25 @@ export const startEventWorker = (): Worker<EventJobData> => {
         console.log(`[Worker] Processed heartbeat for session: ${sessionId}`);
       }
 
-      await Event.updateOne(
-        { eventId: event.eventId },
-        {
-          $setOnInsert: {
-            eventId: event.eventId,
-            projectId,
-            projectKey: event.projectKey,
-            eventType: event.eventType,
-            timestamp: eventTimestamp,
-            sdkVersion: event.sdkVersion,
-            platform: event.platform,
-            context: event.context,
-            payload: event.payload,
+      if (event.eventType !== 'heartbeat') {
+        await Event.updateOne(
+          { eventId: event.eventId },
+          {
+            $setOnInsert: {
+              eventId: event.eventId,
+              projectId,
+              projectKey: event.projectKey,
+              eventType: event.eventType,
+              timestamp: eventTimestamp,
+              sdkVersion: event.sdkVersion,
+              platform: event.platform,
+              context: event.context,
+              payload: event.payload,
+            },
           },
-        },
-        { upsert: true },
-      );
+          { upsert: true },
+        );
+      }
 
       // Phase 10: Session Pre-aggregation
       if (sessionId && sessionId !== 'unknown') {
@@ -73,7 +75,7 @@ export const startEventWorker = (): Worker<EventJobData> => {
             exitPage: event.context.path,
           },
           $inc: {
-            eventCount: 1,
+            eventCount: event.eventType === 'heartbeat' ? 0 : 1,
             pageCount: isPageView ? 1 : 0,
           },
         };
@@ -95,7 +97,7 @@ export const startEventWorker = (): Worker<EventJobData> => {
             totalSessions: 1, // Approximation
           },
           $max: { lastSeen: eventTimestamp },
-          $inc: { totalEvents: 1 },
+          $inc: { totalEvents: event.eventType === 'heartbeat' ? 0 : 1 },
         };
 
         if (
