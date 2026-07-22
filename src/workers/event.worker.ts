@@ -5,7 +5,6 @@ import { Session } from '../models/session.model.js';
 import { TrackedUser } from '../models/tracked-user.model.js';
 import { EVENT_QUEUE_NAME, type EventJobData } from '../services/eventQueue.service.js';
 import { ActiveUsersService } from '../realtime/active-users.js';
-import { EventsPublisher } from '../realtime/events.publisher.js';
 
 /**
  * BullMQ Worker — processes queued events and persists them to MongoDB.
@@ -99,9 +98,20 @@ export const startEventWorker = (): Worker<EventJobData> => {
           $inc: { totalEvents: 1 },
         };
 
-        if (event.eventType === 'identify' && typeof event.payload === 'object') {
-          // Store custom properties passed during identify
-          updateUser.$set = { properties: event.payload };
+        if (
+          event.eventType === 'identify' &&
+          typeof event.payload === 'object' &&
+          event.payload !== null
+        ) {
+          const traits = { ...(event.payload as Record<string, unknown>) };
+          delete traits.sessionId;
+          delete traits.userId;
+          const existingUser = await TrackedUser.findOne({
+            projectId,
+            externalUserId: userId,
+          }).lean();
+          const existingProperties = (existingUser?.properties as Record<string, unknown>) || {};
+          updateUser.$set = { properties: { ...existingProperties, ...traits } };
         }
 
         await TrackedUser.updateOne({ projectId, externalUserId: userId }, updateUser, {
@@ -109,30 +119,7 @@ export const startEventWorker = (): Worker<EventJobData> => {
         });
       }
 
-      if (event.eventType !== 'heartbeat') {
-        const liveEventType = event.eventType;
-        let eventName = event.context.path || event.eventType;
-
-        if (event.eventType === 'click') {
-          eventName =
-            (event.payload?.name as string) || (event.payload?.element as string) || 'Click';
-        } else if (event.eventType === 'scroll') {
-          eventName = (event.payload?.page as string) || 'Scroll';
-        } else if (event.eventType === 'page_view') {
-          eventName = (event.payload?.page_title as string) || event.context.path || 'Page View';
-        } else if (event.eventType === 'search') {
-          eventName = (event.payload?.query as string) || 'Search';
-        } else if (event.eventType === 'custom') {
-          eventName = (event.payload?.eventName as string) || 'Custom Event';
-        }
-
-        await EventsPublisher.publishNewEvent(projectId, {
-          type: liveEventType,
-          name: eventName,
-          sessionId,
-          timestamp: eventTimestamp,
-        });
-      }
+      // Realtime broadcasting is handled on ingestion fast-path (ingestEventController)
 
       console.log(`[Worker] Processed event: ${event.eventType} (${event.eventId})`);
     },
